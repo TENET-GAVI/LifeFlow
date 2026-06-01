@@ -730,6 +730,121 @@
         font-weight: 800;
       }
 
+      .field-stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+      }
+
+      .field label {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .field input,
+      .field select {
+        width: 100%;
+        min-height: 46px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 0 12px;
+        color: var(--ink);
+        background: rgba(247, 248, 241, 0.9);
+        outline: none;
+      }
+
+      .empty-state {
+        min-height: 140px;
+        border: 1px dashed var(--line);
+        border-radius: 22px;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        color: var(--muted);
+        text-align: center;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .record-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .record-row {
+        min-height: 54px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.56);
+      }
+
+      .record-row strong {
+        font-size: 13px;
+      }
+
+      .record-row span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .login-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        display: none;
+        place-items: center;
+        padding: 24px;
+        background:
+          radial-gradient(circle at 20% 12%, rgba(98, 168, 213, 0.22), transparent 30%),
+          linear-gradient(135deg, #f8f7ef, #e7eee8);
+      }
+
+      .login-screen.open {
+        display: grid;
+      }
+
+      .login-card {
+        width: min(390px, 100%);
+        border: 1px solid var(--line);
+        border-radius: 30px;
+        padding: 22px;
+        background: rgba(255, 255, 255, 0.76);
+        box-shadow: var(--shadow);
+      }
+
+      .login-card h1 {
+        margin: 8px 0 8px;
+        font-family: "Fraunces", serif;
+        font-size: 40px;
+        line-height: 1;
+      }
+
+      .login-card p {
+        margin: 0 0 18px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .user-chip {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 12px;
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.62);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
       .deerflow {
         position: fixed;
         right: 16px;
@@ -836,6 +951,25 @@
     </style>
   </head>
   <body>
+    <div class="login-screen" id="loginScreen">
+      <form class="login-card" id="loginForm">
+        <p class="eyebrow">本地账号</p>
+        <h1>进入 LifeFlow</h1>
+        <p>输入你的名字或代号。当前静态版会把不同用户的数据分开保存在本机浏览器里，适合手机主屏幕使用。</p>
+        <div class="field-stack">
+          <div class="field">
+            <label for="loginName">用户名</label>
+            <input id="loginName" placeholder="例如：Gavi" autocomplete="username" required maxlength="24" />
+          </div>
+          <div class="field">
+            <label for="loginPin">本机口令</label>
+            <input id="loginPin" placeholder="可选，用于区分本机资料" autocomplete="current-password" maxlength="24" type="password" />
+          </div>
+        </div>
+        <button class="primary-action" type="submit">开始使用</button>
+      </form>
+    </div>
+
     <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
       <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></symbol>
       <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
@@ -866,7 +1000,7 @@
                 <p class="date">6 月 1 日 周一</p>
                 <h2>今天的节律</h2>
               </div>
-              <button class="icon-button" aria-label="设置"><svg><use href="#i-settings"></use></svg></button>
+              <button class="user-chip" id="currentUserButton" type="button">未登录</button>
             </header>
 
             <div class="content">
@@ -920,7 +1054,7 @@
               <section class="view" data-view="habits">
                 <div class="toolbar">
                   <h3>习惯库</h3>
-                  <button class="add-button"><svg><use href="#i-plus"></use></svg>新建</button>
+                  <button class="add-button" id="openNewHabit"><svg><use href="#i-plus"></use></svg>新建</button>
                 </div>
                 <div class="category-strip">
                   <button class="category-pill" style="--pill: var(--mint)">作息</button>
@@ -1035,20 +1169,85 @@
       </div>
     </div>
 
+    <div class="sheet" id="newHabitSheet">
+      <button class="backdrop" id="closeNewHabit" aria-label="关闭新建任务"></button>
+      <div class="sheet-panel">
+        <div class="handle"></div>
+        <article class="review-card">
+          <p class="eyebrow">新建任务</p>
+          <h3>今天开始一个可执行的小行动</h3>
+          <div class="field-stack">
+            <div class="field">
+              <label for="newHabitTitle">名称</label>
+              <input id="newHabitTitle" placeholder="例如：阅读 10 页" maxlength="24" />
+            </div>
+            <div class="field">
+              <label for="newHabitCategory">分类</label>
+              <select id="newHabitCategory">
+                <option value="study">学习</option>
+                <option value="body">身体</option>
+                <option value="sleep">作息</option>
+                <option value="mind">情绪</option>
+                <option value="space">环境</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="newHabitTarget">目标</label>
+              <input id="newHabitTarget" placeholder="例如：20 分钟" maxlength="18" />
+            </div>
+            <div class="field">
+              <label for="newHabitTime">时间段</label>
+              <input id="newHabitTime" placeholder="例如：晚上" maxlength="12" />
+            </div>
+          </div>
+        </article>
+        <button class="primary-action" id="saveNewHabit">添加到今日</button>
+      </div>
+    </div>
+
     <a class="deerflow" href="https://deerflow.tech" target="_blank" rel="noreferrer">Created By Deerflow</a>
 
     <script>
+      function renderTrends() {}
+    </script>
+
+    <script>
       const STORAGE_KEY = "lifeflow.prototype.v1";
+      const TODAY = dateKey();
+      const habitMeta = {
+        sleep: { label: "作息", color: "var(--mint)", icon: "i-moon" },
+        study: { label: "学习", color: "var(--sky)", icon: "i-book" },
+        body: { label: "身体", color: "var(--coral)", icon: "i-dumbbell" },
+        mind: { label: "情绪", color: "var(--gold)", icon: "i-pen" },
+        space: { label: "环境", color: "var(--leaf)", icon: "i-check" },
+      };
+
       const defaultHabits = [
-        { id: "sleep", title: "固定睡眠窗口", type: "作息", target: "23:30", time: "晚上", streak: 6, stability: 82, done: false, color: "var(--mint)", icon: "i-moon" },
-        { id: "english", title: "英语输入", type: "学习", target: "45 分钟", time: "上午", streak: 11, stability: 76, done: true, color: "var(--sky)", icon: "i-book" },
-        { id: "move", title: "身体唤醒", type: "身体", target: "20 分钟", time: "傍晚", streak: 4, stability: 64, done: false, color: "var(--coral)", icon: "i-dumbbell" },
-        { id: "journal", title: "晚间复盘", type: "情绪", target: "3 分钟", time: "睡前", streak: 8, stability: 71, done: false, color: "var(--gold)", icon: "i-pen" },
-        { id: "room", title: "环境归位", type: "环境", target: "10 分钟", time: "晚上", streak: 5, stability: 69, done: true, color: "var(--leaf)", icon: "i-check" },
+        { id: "sleep", title: "固定睡眠窗口", category: "sleep", target: "23:30", time: "晚上", streak: 0, stability: 0, done: false },
+        { id: "english", title: "英语输入", category: "study", target: "45 分钟", time: "上午", streak: 0, stability: 0, done: false },
+        { id: "move", title: "身体唤醒", category: "body", target: "20 分钟", time: "傍晚", streak: 0, stability: 0, done: false },
+        { id: "journal", title: "晚间复盘", category: "mind", target: "3 分钟", time: "睡前", streak: 0, stability: 0, done: false },
+        { id: "room", title: "环境归位", category: "space", target: "10 分钟", time: "晚上", streak: 0, stability: 0, done: false },
       ];
 
       const habits = loadHabits();
       const icon = (name) => `<svg><use href="#${name}"></use></svg>`;
+
+      function dateKey(date = new Date()) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+
+      function dateLabel(date) {
+        const [, month, day] = date.split("-");
+        return `${Number(month)}/${Number(day)}`;
+      }
+
+      function getHabitMeta(habit) {
+        return habitMeta[habit.category] || habitMeta.study;
+      }
 
       function loadSavedState() {
         try {
@@ -1060,19 +1259,43 @@
 
       function loadHabits() {
         const saved = loadSavedState();
-        return defaultHabits.map((habit) => ({
+        const storedList = Array.isArray(saved.habitList) ? saved.habitList : defaultHabits;
+        const shouldKeepTodayState = saved.activeDate === TODAY;
+        return storedList.map((habit) => ({
           ...habit,
-          done: saved.habits && Object.prototype.hasOwnProperty.call(saved.habits, habit.id) ? saved.habits[habit.id] : habit.done,
+          category: habit.category || "study",
+          done: shouldKeepTodayState ? Boolean(habit.done) : false,
         }));
+      }
+
+      function buildDailyRecord() {
+        const done = habits.filter((habit) => habit.done).length;
+        const total = habits.length;
+        const mood = document.querySelector(".mood-grid .mood-button.active")?.textContent?.trim() || "";
+        const review = Array.from(document.querySelectorAll("textarea")).map((textarea) => textarea.value.trim()).filter(Boolean);
+        return {
+          date: TODAY,
+          done,
+          total,
+          percent: total ? Math.round((done / total) * 100) : 0,
+          mood,
+          reviewSaved: review.length > 0,
+          habits: habits.map((habit) => ({ id: habit.id, title: habit.title, done: habit.done })),
+          updatedAt: new Date().toISOString(),
+        };
       }
 
       function saveState() {
         const saved = loadSavedState();
+        const records = { ...(saved.records || {}) };
+        records[TODAY] = buildDailyRecord();
         localStorage.setItem(
           STORAGE_KEY,
           JSON.stringify({
             ...saved,
-            habits: Object.fromEntries(habits.map((habit) => [habit.id, habit.done])),
+            activeDate: TODAY,
+            habitList: habits,
+            records,
             review: Array.from(document.querySelectorAll("textarea")).map((textarea) => textarea.value),
           }),
         );
@@ -1093,6 +1316,7 @@
         document.getElementById("progressHint").textContent = `${done} / ${habits.length} 个习惯已完成`;
         document.getElementById("ringText").textContent = value;
         document.getElementById("progressRing").style.setProperty("--angle", `${value * 3.6}deg`);
+        renderTrends();
       }
 
       function toggleHabit(id) {
@@ -1106,10 +1330,11 @@
         const today = document.getElementById("todayHabits");
         today.querySelectorAll(".habit-row").forEach((node) => node.remove());
         habits.slice(0, 4).forEach((habit) => {
+          const meta = getHabitMeta(habit);
           const row = document.createElement("button");
           row.className = `habit-row ${habit.done ? "done" : ""}`;
           row.innerHTML = `
-            <span class="habit-icon" style="background:${habit.color}">${icon(habit.icon)}</span>
+            <span class="habit-icon" style="background:${meta.color}">${icon(meta.icon)}</span>
             <span class="habit-copy"><strong>${habit.title}</strong><small>${habit.time} · ${habit.target}</small></span>
             <span class="check">${icon(habit.done ? "i-check" : "i-circle")}</span>
           `;
@@ -1120,16 +1345,17 @@
         const cards = document.getElementById("habitCards");
         cards.innerHTML = "";
         habits.forEach((habit) => {
+          const meta = getHabitMeta(habit);
           const card = document.createElement("article");
           card.className = "habit-card";
           card.innerHTML = `
             <div class="habit-card-top">
-              <span class="habit-icon" style="background:${habit.color}">${icon(habit.icon)}</span>
+              <span class="habit-icon" style="background:${meta.color}">${icon(meta.icon)}</span>
               <button class="check ${habit.done ? "done" : ""}" aria-label="切换${habit.title}">${icon(habit.done ? "i-check" : "i-circle")}</button>
             </div>
             <strong>${habit.title}</strong>
             <p>${habit.time} · 目标 ${habit.target}</p>
-            <div class="stability"><div style="width:${habit.stability}%;background:${habit.color}"></div></div>
+            <div class="stability"><div style="width:${habit.stability || 0}%;background:${meta.color}"></div></div>
             <small>${habit.stability}% 稳定度 · 连续 ${habit.streak} 天</small>
           `;
           card.querySelector("button").addEventListener("click", () => toggleHabit(habit.id));
@@ -1181,5 +1407,6 @@
 
       renderHabits();
     </script>
+    <script src="./app.js"></script>
   </body>
 </html>

@@ -1,0 +1,19 @@
+{
+  "name": "LifeFlow 生活节律",
+  "short_name": "LifeFlow",
+  "description": "每日计划、长期习惯、晚间复盘和生活趋势。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f8f1",
+  "theme_color": "#f7f8f1",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

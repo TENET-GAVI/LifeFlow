@@ -1,0 +1,1185 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LifeFlow 生活节律原型</title>
+    <meta name="theme-color" content="#f7f8f1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="LifeFlow" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="./site.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Noto+Sans+SC:wght@400;500;700&display=swap");
+
+      :root {
+        --paper: #f7f8f1;
+        --paper-2: #e9efe5;
+        --ink: #17211d;
+        --muted: #68746e;
+        --line: rgba(23, 33, 29, 0.13);
+        --mint: #37c997;
+        --sky: #62a8d5;
+        --coral: #f36f55;
+        --gold: #d9a43a;
+        --leaf: #80aa5d;
+        --deep: #1f2824;
+        --shadow: 0 22px 60px rgba(23, 33, 29, 0.16);
+        font-family: "Noto Sans SC", sans-serif;
+        color: var(--ink);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 12% 16%, rgba(98, 168, 213, 0.22), transparent 28%),
+          radial-gradient(circle at 82% 72%, rgba(243, 111, 85, 0.18), transparent 28%),
+          linear-gradient(135deg, #f8f7ef 0%, #e7eee8 54%, #f6efe4 100%);
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(23, 33, 29, 0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(23, 33, 29, 0.035) 1px, transparent 1px);
+        background-size: 34px 34px;
+        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.65), transparent 78%);
+      }
+
+      button,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .stage {
+        min-height: 100vh;
+        padding: 32px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .workspace {
+        width: min(1180px, 100%);
+        min-height: calc(100vh - 64px);
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(340px, 420px) minmax(360px, 1fr);
+        align-items: center;
+        gap: 56px;
+      }
+
+      .phone {
+        width: min(100%, 410px);
+        height: 844px;
+        margin: 0 auto;
+        border: 10px solid #101614;
+        border-radius: 48px;
+        background: #101614;
+        overflow: hidden;
+        box-shadow: 0 30px 88px rgba(23, 33, 29, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+        animation: enter-phone 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+
+      .status {
+        height: 34px;
+        padding: 8px 24px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .sensor {
+        width: 92px;
+        height: 23px;
+        border-radius: 999px;
+        background: #050806;
+      }
+
+      .screen {
+        height: calc(100% - 34px);
+        border-radius: 35px 35px 38px 38px;
+        background: var(--paper);
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+      }
+
+      .app-header {
+        padding: 24px 22px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .date,
+      .eyebrow,
+      .kicker {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .app-header h2 {
+        margin: 4px 0 0;
+        font-family: "Fraunces", serif;
+        font-size: 31px;
+        line-height: 1;
+      }
+
+      .icon-button {
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.58);
+      }
+
+      .content {
+        min-height: 0;
+        overflow: auto;
+        padding: 0 18px 18px;
+      }
+
+      .view {
+        display: none;
+        gap: 14px;
+        animation: rise 420ms ease both;
+      }
+
+      .view.active {
+        display: grid;
+      }
+
+      .rhythm-card,
+      .task-row,
+      .habit-row,
+      .review-entry,
+      .review-card,
+      .trend-summary,
+      .chart-card,
+      .metric-card,
+      .habit-card {
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.68);
+        box-shadow: 0 14px 34px rgba(23, 33, 29, 0.08);
+      }
+
+      .rhythm-card {
+        min-height: 156px;
+        padding: 20px;
+        border-radius: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background:
+          linear-gradient(90deg, rgba(247, 248, 241, 0.97), rgba(247, 248, 241, 0.66)),
+          url("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=72");
+        background-size: cover;
+        background-position: center;
+      }
+
+      .rhythm-card strong {
+        display: block;
+        margin-top: 10px;
+        font-family: "Fraunces", serif;
+        font-size: 54px;
+        line-height: 0.9;
+      }
+
+      .rhythm-card span {
+        display: block;
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .ring {
+        --angle: 0deg;
+        width: 94px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: conic-gradient(var(--mint) var(--angle), rgba(23, 33, 29, 0.1) 0);
+        position: relative;
+      }
+
+      .ring::before {
+        content: "";
+        position: absolute;
+        inset: 9px;
+        border-radius: inherit;
+        background: var(--paper);
+      }
+
+      .ring span {
+        position: relative;
+        margin: 0;
+        color: var(--ink);
+        font-weight: 800;
+      }
+
+      .section-title {
+        min-height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .section-title div {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .section-title h3,
+      .toolbar h3,
+      .review-card h3,
+      .trend-summary h3 {
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.2;
+      }
+
+      .section-title button,
+      .add-button {
+        min-width: 54px;
+        min-height: 30px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.62);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .task-list,
+      .habit-section,
+      .habit-grid {
+        display: grid;
+        gap: 10px;
+      }
+
+      .task-row,
+      .habit-row {
+        width: 100%;
+        min-height: 70px;
+        border-radius: 22px;
+        padding: 12px;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 12px;
+        color: var(--ink);
+        text-align: left;
+      }
+
+      .task-icon,
+      .habit-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        color: #101714;
+      }
+
+      .task-icon {
+        background: var(--paper-2);
+      }
+
+      .task-row strong,
+      .habit-row strong,
+      .habit-card strong {
+        display: block;
+        font-size: 14px;
+      }
+
+      .task-row span,
+      .habit-row small,
+      .habit-card p,
+      .habit-card small,
+      .trend-summary span,
+      .principle span,
+      .roadmap small {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .habit-row {
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.56);
+      }
+
+      .habit-copy {
+        display: grid;
+        gap: 3px;
+      }
+
+      .check {
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        background: transparent;
+      }
+
+      .done .check,
+      .check.done {
+        border-color: transparent;
+        color: #101714;
+        background: var(--mint);
+      }
+
+      .review-entry {
+        min-height: 76px;
+        border-radius: 24px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #fff;
+        text-align: left;
+        background: var(--deep);
+      }
+
+      .review-entry span {
+        display: block;
+        color: rgba(255, 255, 255, 0.64);
+        font-size: 12px;
+      }
+
+      .review-entry strong {
+        display: block;
+        margin-top: 4px;
+        font-size: 17px;
+      }
+
+      .tab-bar {
+        height: 78px;
+        margin: 0 14px 12px;
+        padding: 8px;
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.84);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+        box-shadow: 0 12px 28px rgba(23, 33, 29, 0.1);
+      }
+
+      .tab-bar button {
+        border: 0;
+        border-radius: 21px;
+        display: grid;
+        place-items: center;
+        gap: 2px;
+        color: var(--muted);
+        background: transparent;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .tab-bar button.active {
+        color: var(--ink);
+        background: var(--paper-2);
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .add-button {
+        min-height: 36px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+      }
+
+      .category-strip {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+
+      .category-pill {
+        min-width: max-content;
+        min-height: 38px;
+        padding: 0 13px;
+        border: 1px solid color-mix(in srgb, var(--pill), transparent 45%);
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--ink);
+        background: color-mix(in srgb, var(--pill), white 78%);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .habit-card {
+        min-height: 146px;
+        border-radius: 24px;
+        padding: 16px;
+      }
+
+      .habit-card-top {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+
+      .habit-card p {
+        margin: 6px 0 12px;
+      }
+
+      .stability {
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(23, 33, 29, 0.08);
+        overflow: hidden;
+        margin-bottom: 9px;
+      }
+
+      .stability div {
+        height: 100%;
+        border-radius: inherit;
+      }
+
+      .review-card {
+        border-radius: 24px;
+        padding: 16px;
+      }
+
+      .review-card h3 {
+        margin-bottom: 12px;
+      }
+
+      .mood-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+      }
+
+      .mood-button {
+        min-height: 42px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        color: var(--ink);
+        background: var(--paper);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .mood-button.active {
+        border-color: transparent;
+        background: var(--gold);
+      }
+
+      .review-card textarea {
+        width: 100%;
+        min-height: 112px;
+        resize: none;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 12px;
+        color: var(--ink);
+        background: rgba(247, 248, 241, 0.84);
+        outline: none;
+        line-height: 1.65;
+      }
+
+      .trend-summary {
+        min-height: 126px;
+        border-radius: 28px;
+        padding: 18px;
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        color: #fff;
+        background: linear-gradient(135deg, #1f2824, #31463e);
+      }
+
+      .trend-summary .eyebrow,
+      .trend-summary span {
+        color: rgba(255, 255, 255, 0.68);
+      }
+
+      .trend-summary h3 {
+        margin: 8px 0;
+        font-family: "Fraunces", serif;
+        font-size: 28px;
+      }
+
+      .chart-card {
+        border-radius: 24px;
+        padding: 16px;
+      }
+
+      .bar-chart {
+        height: 170px;
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        align-items: end;
+        gap: 10px;
+        padding-top: 10px;
+      }
+
+      .bar-col {
+        height: 100%;
+        display: grid;
+        grid-template-rows: 1fr auto;
+        gap: 8px;
+        align-items: end;
+        justify-items: center;
+      }
+
+      .bar-col div {
+        width: 100%;
+        min-height: 22px;
+        border-radius: 999px 999px 10px 10px;
+        background: linear-gradient(180deg, var(--mint), var(--sky));
+      }
+
+      .bar-col span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .metric-card {
+        min-height: 116px;
+        border-radius: 22px;
+        padding: 15px;
+      }
+
+      .metric-card span,
+      .metric-card small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .metric-card strong {
+        display: block;
+        margin: 8px 0 4px;
+        font-family: "Fraunces", serif;
+        font-size: 36px;
+      }
+
+      .board {
+        max-width: 650px;
+      }
+
+      .board h1 {
+        margin: 12px 0 18px;
+        font-family: "Fraunces", serif;
+        font-size: clamp(44px, 5vw, 74px);
+        line-height: 0.96;
+      }
+
+      .board p {
+        max-width: 590px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.8;
+      }
+
+      .principles {
+        margin-top: 34px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+
+      .principle {
+        min-height: 166px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        display: grid;
+        align-content: start;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.52);
+      }
+
+      .principle strong {
+        font-size: 15px;
+      }
+
+      .roadmap {
+        margin-top: 18px;
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.62);
+        overflow: hidden;
+      }
+
+      .roadmap div {
+        min-height: 82px;
+        padding: 16px 18px;
+        display: grid;
+        grid-template-columns: 42px 1fr;
+        column-gap: 12px;
+        align-items: center;
+        border-top: 1px solid var(--line);
+      }
+
+      .roadmap div:first-child {
+        border-top: 0;
+      }
+
+      .roadmap span {
+        grid-row: span 2;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        background: var(--deep);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .sheet {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: none;
+        place-items: end center;
+      }
+
+      .sheet.open {
+        display: grid;
+      }
+
+      .backdrop {
+        position: absolute;
+        inset: 0;
+        border: 0;
+        background: rgba(23, 33, 29, 0.36);
+      }
+
+      .sheet-panel {
+        width: min(390px, calc(100% - 28px));
+        max-height: 82vh;
+        overflow: auto;
+        margin-bottom: 24px;
+        padding: 10px 16px 16px;
+        border-radius: 30px;
+        background: var(--paper);
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.28);
+        position: relative;
+        animation: sheet-up 260ms ease both;
+      }
+
+      .handle {
+        width: 44px;
+        height: 5px;
+        margin: 4px auto 14px;
+        border-radius: 999px;
+        background: rgba(23, 33, 29, 0.18);
+      }
+
+      .primary-action {
+        width: 100%;
+        min-height: 52px;
+        margin-top: 12px;
+        border: 0;
+        border-radius: 18px;
+        color: #fff;
+        background: var(--deep);
+        font-weight: 800;
+      }
+
+      .deerflow {
+        position: fixed;
+        right: 16px;
+        bottom: 14px;
+        z-index: 30;
+        color: rgba(23, 33, 29, 0.52);
+        font-size: 11px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      svg {
+        width: 19px;
+        height: 19px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes enter-phone {
+        from {
+          opacity: 0;
+          transform: translateY(24px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes sheet-up {
+        from {
+          transform: translateY(18px);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 980px) {
+        .stage {
+          padding: 20px;
+        }
+
+        .workspace {
+          min-height: auto;
+          grid-template-columns: 1fr;
+          gap: 28px;
+        }
+
+        .board {
+          order: -1;
+          max-width: 720px;
+        }
+
+        .board h1 {
+          font-size: 44px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .stage {
+          padding: 0;
+        }
+
+        .workspace {
+          display: block;
+        }
+
+        .phone {
+          width: 100%;
+          height: 100vh;
+          border: 0;
+          border-radius: 0;
+        }
+
+        .status {
+          display: none;
+        }
+
+        .screen {
+          height: 100vh;
+          border-radius: 0;
+        }
+
+        .board,
+        .deerflow {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+      <symbol id="i-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 7.5A9 9 0 1 1 12 3z"/></symbol>
+      <symbol id="i-dumbbell" viewBox="0 0 24 24"><path d="M7 7v10"/><path d="M17 7v10"/><path d="M4 9v6"/><path d="M20 9v6"/><path d="M7 12h10"/></symbol>
+      <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+      <symbol id="i-line" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-7"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+      <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3 9.5 9.5 3 12l6.5 2.5L12 21l2.5-6.5L21 12l-6.5-2.5Z"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+    </svg>
+
+    <main class="stage">
+      <div class="workspace">
+        <section class="phone" aria-label="LifeFlow App 原型">
+          <div class="status">
+            <span>9:41</span>
+            <div class="sensor"></div>
+            <span>100%</span>
+          </div>
+
+          <div class="screen">
+            <header class="app-header">
+              <div>
+                <p class="date">6 月 1 日 周一</p>
+                <h2>今天的节律</h2>
+              </div>
+              <button class="icon-button" aria-label="设置"><svg><use href="#i-settings"></use></svg></button>
+            </header>
+
+            <div class="content">
+              <section class="view active" data-view="today">
+                <article class="rhythm-card">
+                  <div>
+                    <p class="eyebrow">今日完成度</p>
+                    <strong id="progressText">40%</strong>
+                    <span id="progressHint">2 / 5 个习惯已完成</span>
+                  </div>
+                  <div class="ring" id="progressRing"><span id="ringText">40</span></div>
+                </article>
+
+                <section>
+                  <div class="section-title">
+                    <div><svg><use href="#i-sun"></use></svg><h3>今日三件事</h3></div>
+                    <button>调整</button>
+                  </div>
+                  <div class="task-list">
+                    <article class="task-row">
+                      <div class="task-icon"><svg><use href="#i-moon"></use></svg></div>
+                      <div><strong>23:30 前上床</strong><span>给明天留一点清醒</span></div>
+                      <svg><use href="#i-circle"></use></svg>
+                    </article>
+                    <article class="task-row">
+                      <div class="task-icon"><svg><use href="#i-book"></use></svg></div>
+                      <div><strong>英语学习 45 分钟</strong><span>听力 20 分钟 + 复述 25 分钟</span></div>
+                      <svg><use href="#i-circle"></use></svg>
+                    </article>
+                    <article class="task-row">
+                      <div class="task-icon"><svg><use href="#i-dumbbell"></use></svg></div>
+                      <div><strong>运动 20 分钟</strong><span>轻汗即可，不追求爆发</span></div>
+                      <svg><use href="#i-circle"></use></svg>
+                    </article>
+                  </div>
+                </section>
+
+                <section class="habit-section" id="todayHabits">
+                  <div class="section-title">
+                    <div><svg><use href="#i-check"></use></svg><h3>今日习惯</h3></div>
+                    <button data-tab-target="habits">全部</button>
+                  </div>
+                </section>
+
+                <button class="review-entry" id="openSheet">
+                  <div><span>睡前 3 分钟</span><strong>完成今天的复盘</strong></div>
+                  <svg><use href="#i-pen"></use></svg>
+                </button>
+              </section>
+
+              <section class="view" data-view="habits">
+                <div class="toolbar">
+                  <h3>习惯库</h3>
+                  <button class="add-button"><svg><use href="#i-plus"></use></svg>新建</button>
+                </div>
+                <div class="category-strip">
+                  <button class="category-pill" style="--pill: var(--mint)">作息</button>
+                  <button class="category-pill" style="--pill: var(--sky)">学习</button>
+                  <button class="category-pill" style="--pill: var(--coral)">身体</button>
+                  <button class="category-pill" style="--pill: var(--gold)">情绪</button>
+                  <button class="category-pill" style="--pill: var(--leaf)">环境</button>
+                </div>
+                <div class="habit-grid" id="habitCards"></div>
+              </section>
+
+              <section class="view" data-view="review">
+                <article class="review-card">
+                  <p class="eyebrow">晚间复盘</p>
+                  <h3>今天整体状态如何？</h3>
+                  <div class="mood-grid">
+                    <button class="mood-button">疲惫</button>
+                    <button class="mood-button active">平稳</button>
+                    <button class="mood-button">专注</button>
+                    <button class="mood-button">松弛</button>
+                  </div>
+                </article>
+                <article class="review-card">
+                  <h3>今天最值得保留的一件事</h3>
+                  <textarea>上午没有先刷手机，直接进入了英语学习，状态比预期更稳定。</textarea>
+                </article>
+                <article class="review-card">
+                  <h3>明天最重要的一件事</h3>
+                  <textarea>明天先完成英语学习，再安排其他任务。</textarea>
+                </article>
+              </section>
+
+              <section class="view" data-view="trends">
+                <article class="trend-summary">
+                  <div>
+                    <p class="eyebrow">最近 7 天</p>
+                    <h3>节律正在变稳</h3>
+                    <span>学习稳定，运动偏低，睡眠建议提前 20 分钟。</span>
+                  </div>
+                  <svg><use href="#i-spark"></use></svg>
+                </article>
+                <article class="chart-card">
+                  <div class="section-title">
+                    <div><svg><use href="#i-line"></use></svg><h3>本周完成率</h3></div>
+                    <button>周</button>
+                  </div>
+                  <div class="bar-chart">
+                    <div class="bar-col"><div style="height:62%"></div><span>一</span></div>
+                    <div class="bar-col"><div style="height:74%"></div><span>二</span></div>
+                    <div class="bar-col"><div style="height:48%"></div><span>三</span></div>
+                    <div class="bar-col"><div style="height:80%"></div><span>四</span></div>
+                    <div class="bar-col"><div style="height:68%"></div><span>五</span></div>
+                    <div class="bar-col"><div style="height:91%"></div><span>六</span></div>
+                    <div class="bar-col"><div style="height:73%"></div><span>日</span></div>
+                  </div>
+                </article>
+                <div class="metric-grid">
+                  <article class="metric-card"><span>睡眠</span><strong>72</strong><small>30 天稳定度</small></article>
+                  <article class="metric-card"><span>学习</span><strong>84</strong><small>30 天稳定度</small></article>
+                  <article class="metric-card"><span>运动</span><strong>58</strong><small>30 天稳定度</small></article>
+                  <article class="metric-card"><span>情绪</span><strong>77</strong><small>30 天稳定度</small></article>
+                </div>
+              </section>
+            </div>
+
+            <nav class="tab-bar" aria-label="底部导航">
+              <button class="active" data-tab="today"><svg><use href="#i-home"></use></svg><span>今日</span></button>
+              <button data-tab="habits"><svg><use href="#i-check"></use></svg><span>习惯</span></button>
+              <button data-tab="review"><svg><use href="#i-pen"></use></svg><span>复盘</span></button>
+              <button data-tab="trends"><svg><use href="#i-line"></use></svg><span>趋势</span></button>
+            </nav>
+          </div>
+        </section>
+
+        <aside class="board">
+          <p class="kicker">LifeFlow 0.1</p>
+          <h1>把生活变成每天可调整的节律。</h1>
+          <p>第一版聚焦今日计划、习惯稳定度、晚间复盘和趋势反馈。它不是惩罚式打卡器，而是一个低压力的自我校准工具。</p>
+          <div class="principles">
+            <article class="principle"><svg><use href="#i-sun"></use></svg><strong>早晨只看今天</strong><span>醒来后只给出三件重要事和必要习惯。</span></article>
+            <article class="principle"><svg><use href="#i-pen"></use></svg><strong>失败可以被解释</strong><span>跳过任务时记录原因，系统关注模式而不是责备。</span></article>
+            <article class="principle"><svg><use href="#i-line"></use></svg><strong>看稳定度</strong><span>用最近 30 天稳定度代替连续天数焦虑。</span></article>
+          </div>
+          <div class="roadmap">
+            <div><span>01</span><strong>本地可用</strong><small>SwiftUI + SwiftData + 通知提醒</small></div>
+            <div><span>02</span><strong>周复盘</strong><small>自动总结睡眠、学习、运动的变化</small></div>
+            <div><span>03</span><strong>iOS 深度整合</strong><small>小组件、Health、日历、iCloud 同步</small></div>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <div class="sheet" id="sheet">
+      <button class="backdrop" id="closeSheet" aria-label="关闭复盘"></button>
+      <div class="sheet-panel">
+        <div class="handle"></div>
+        <article class="review-card">
+          <p class="eyebrow">睡前 3 分钟</p>
+          <h3>今天整体状态如何？</h3>
+          <div class="mood-grid">
+            <button class="mood-button">疲惫</button>
+            <button class="mood-button active">平稳</button>
+            <button class="mood-button">专注</button>
+            <button class="mood-button">松弛</button>
+          </div>
+        </article>
+        <article class="review-card" style="margin-top:10px">
+          <h3>明天最重要的一件事</h3>
+          <textarea>明天先完成英语学习，再安排其他任务。</textarea>
+        </article>
+        <button class="primary-action" id="saveReview">保存今天</button>
+      </div>
+    </div>
+
+    <a class="deerflow" href="https://deerflow.tech" target="_blank" rel="noreferrer">Created By Deerflow</a>
+
+    <script>
+      const STORAGE_KEY = "lifeflow.prototype.v1";
+      const defaultHabits = [
+        { id: "sleep", title: "固定睡眠窗口", type: "作息", target: "23:30", time: "晚上", streak: 6, stability: 82, done: false, color: "var(--mint)", icon: "i-moon" },
+        { id: "english", title: "英语输入", type: "学习", target: "45 分钟", time: "上午", streak: 11, stability: 76, done: true, color: "var(--sky)", icon: "i-book" },
+        { id: "move", title: "身体唤醒", type: "身体", target: "20 分钟", time: "傍晚", streak: 4, stability: 64, done: false, color: "var(--coral)", icon: "i-dumbbell" },
+        { id: "journal", title: "晚间复盘", type: "情绪", target: "3 分钟", time: "睡前", streak: 8, stability: 71, done: false, color: "var(--gold)", icon: "i-pen" },
+        { id: "room", title: "环境归位", type: "环境", target: "10 分钟", time: "晚上", streak: 5, stability: 69, done: true, color: "var(--leaf)", icon: "i-check" },
+      ];
+
+      const habits = loadHabits();
+      const icon = (name) => `<svg><use href="#${name}"></use></svg>`;
+
+      function loadSavedState() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        } catch {
+          return {};
+        }
+      }
+
+      function loadHabits() {
+        const saved = loadSavedState();
+        return defaultHabits.map((habit) => ({
+          ...habit,
+          done: saved.habits && Object.prototype.hasOwnProperty.call(saved.habits, habit.id) ? saved.habits[habit.id] : habit.done,
+        }));
+      }
+
+      function saveState() {
+        const saved = loadSavedState();
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            ...saved,
+            habits: Object.fromEntries(habits.map((habit) => [habit.id, habit.done])),
+            review: Array.from(document.querySelectorAll("textarea")).map((textarea) => textarea.value),
+          }),
+        );
+      }
+
+      function restoreReviewText() {
+        const saved = loadSavedState();
+        if (!Array.isArray(saved.review)) return;
+        document.querySelectorAll("textarea").forEach((textarea, index) => {
+          if (typeof saved.review[index] === "string") textarea.value = saved.review[index];
+        });
+      }
+
+      function updateProgress() {
+        const done = habits.filter((habit) => habit.done).length;
+        const value = Math.round((done / habits.length) * 100);
+        document.getElementById("progressText").textContent = `${value}%`;
+        document.getElementById("progressHint").textContent = `${done} / ${habits.length} 个习惯已完成`;
+        document.getElementById("ringText").textContent = value;
+        document.getElementById("progressRing").style.setProperty("--angle", `${value * 3.6}deg`);
+      }
+
+      function toggleHabit(id) {
+        const habit = habits.find((item) => item.id === id);
+        if (habit) habit.done = !habit.done;
+        saveState();
+        renderHabits();
+      }
+
+      function renderHabits() {
+        const today = document.getElementById("todayHabits");
+        today.querySelectorAll(".habit-row").forEach((node) => node.remove());
+        habits.slice(0, 4).forEach((habit) => {
+          const row = document.createElement("button");
+          row.className = `habit-row ${habit.done ? "done" : ""}`;
+          row.innerHTML = `
+            <span class="habit-icon" style="background:${habit.color}">${icon(habit.icon)}</span>
+            <span class="habit-copy"><strong>${habit.title}</strong><small>${habit.time} · ${habit.target}</small></span>
+            <span class="check">${icon(habit.done ? "i-check" : "i-circle")}</span>
+          `;
+          row.addEventListener("click", () => toggleHabit(habit.id));
+          today.appendChild(row);
+        });
+
+        const cards = document.getElementById("habitCards");
+        cards.innerHTML = "";
+        habits.forEach((habit) => {
+          const card = document.createElement("article");
+          card.className = "habit-card";
+          card.innerHTML = `
+            <div class="habit-card-top">
+              <span class="habit-icon" style="background:${habit.color}">${icon(habit.icon)}</span>
+              <button class="check ${habit.done ? "done" : ""}" aria-label="切换${habit.title}">${icon(habit.done ? "i-check" : "i-circle")}</button>
+            </div>
+            <strong>${habit.title}</strong>
+            <p>${habit.time} · 目标 ${habit.target}</p>
+            <div class="stability"><div style="width:${habit.stability}%;background:${habit.color}"></div></div>
+            <small>${habit.stability}% 稳定度 · 连续 ${habit.streak} 天</small>
+          `;
+          card.querySelector("button").addEventListener("click", () => toggleHabit(habit.id));
+          cards.appendChild(card);
+        });
+
+        updateProgress();
+      }
+
+      function activateTab(tab) {
+        document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.dataset.view === tab));
+        document.querySelectorAll(".tab-bar button").forEach((button) => button.classList.toggle("active", button.dataset.tab === tab));
+        document.querySelector(".content").scrollTo({ top: 0 });
+      }
+
+      document.querySelectorAll("[data-tab]").forEach((button) => {
+        button.addEventListener("click", () => activateTab(button.dataset.tab));
+      });
+
+      document.querySelectorAll("[data-tab-target]").forEach((button) => {
+        button.addEventListener("click", () => activateTab(button.dataset.tabTarget));
+      });
+
+      document.querySelectorAll(".mood-button").forEach((button) => {
+        button.addEventListener("click", () => {
+          const grid = button.closest(".mood-grid");
+          grid.querySelectorAll(".mood-button").forEach((item) => item.classList.remove("active"));
+          button.classList.add("active");
+        });
+      });
+
+      const sheet = document.getElementById("sheet");
+      document.getElementById("openSheet").addEventListener("click", () => sheet.classList.add("open"));
+      document.getElementById("closeSheet").addEventListener("click", () => sheet.classList.remove("open"));
+      document.getElementById("saveReview").addEventListener("click", () => {
+        saveState();
+        sheet.classList.remove("open");
+        activateTab("trends");
+      });
+
+      restoreReviewText();
+      document.querySelectorAll("textarea").forEach((textarea) => textarea.addEventListener("input", saveState));
+
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js").catch(() => {});
+        });
+      }
+
+      renderHabits();
+    </script>
+  </body>
+</html>

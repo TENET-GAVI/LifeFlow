@@ -1,4 +1,4 @@
-const CACHE_NAME = "lifeflow-prototype-v3";
+const CACHE_NAME = "lifeflow-prototype-v4";
 const APP_SHELL = ["./", "./index.html", "./app.js", "./site.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", (event) => {

@@ -538,11 +538,15 @@
   }
 
   function showLogin() {
-    document.getElementById("loginScreen").classList.add("open");
+    const screen = document.getElementById("loginScreen");
+    const nameInput = document.getElementById("loginName");
+    if (!screen) return;
+    if (nameInput && currentUser?.name) nameInput.value = currentUser.name;
+    screen.classList.add("open");
   }
 
   function hideLogin() {
-    document.getElementById("loginScreen").classList.remove("open");
+    document.getElementById("loginScreen")?.classList.remove("open");
   }
 
   function bindEvents() {
